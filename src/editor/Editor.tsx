@@ -73,12 +73,23 @@ const MentionExample = () => {
     }
   }, [chars.length, editor, index, search, target]);
 
+
+const onSave = () => {
+  const str = JSON.stringify(value);
+  let val = value.map(n => Node.string(n)).join('\n');
+  console.log(val);
+  const deSerialize = JSON.parse('[{"children":[{"text":"This example shows how you might implement a simple @-mentions feature that lets users autocomplete mentioning a user by their username. Which, in this case means Star Wars characters. The mentions are rendered as void inline elements inside the document."}]},{"children":[{"text":"Try mentioning characters, like "},{"type":"mention","character":"R2-D2","children":[{"text":""}]},{"text":" or "},{"type":"mention","character":"Mace Windu","children":[{"text":""}]},{"text":"!"}]},{"children":[{"text":""}]},{"children":[{"text":""}]},{"type":"text","character":"Aayla Secura - runAt - to - from","children":[{"text":"Aayla Secura - runAt - to 20-21-202 from "}]},{"type":"text","character":"Value Sets - runAt - to - from","children":[{"text":"Value Sets - runAt - to - from"}]}]');
+  console.log(deSerialize);
+  setValue(deSerialize);
+  console.log(str);
+}
   return (
     <div className="row editor">
       <Slate
         editor={editor}
         value={value}
         onChange={(value) => {
+          console.log(value);
           setValue(value);
           const { selection } = editor;
 
@@ -106,7 +117,6 @@ const MentionExample = () => {
               const suggestionList = filterData.filter((c) =>
                 c.name.toLowerCase().startsWith(beforeMatch[1].toLowerCase())
               );
-              console.log(suggestionList);
               setChars(suggestionList);
               setSearch(beforeMatch[1]);
               setIndex(0);
@@ -152,6 +162,7 @@ const MentionExample = () => {
           </Portal>
         )}
       </Slate>
+      <button type="submit" onClick={onSave}>Submit</button>
     </div>
   );
 };
@@ -172,39 +183,45 @@ const withMentions = (editor) => {
 
 const insertMention = (editor, character: any) => {
   console.log(character);
-  const mention = { type: "mention", character, children: [{ text: "" }] };
-  Transforms.insertNodes(editor, mention);
+  const mention = { type: "text", character, children: [{ text: character }],  };
+  const parent = {type: "custom" , children : [mention]}
+  Transforms.insertNodes(editor, parent);
   Transforms.move(editor);
 };
 
 const Element = (props) => {
   const { attributes, children, element } = props;
+  console.log(props);
   switch (element.type) {
-    case "mention":
-      return <MentionElement {...props} />;
+    case "custom":
+      return <span style={{color: "red"}} {...attributes}>{children}</span>;
     default:
-      return <p {...attributes}>{children}</p>;
+      return <span {...attributes}>{children}</span>;
   }
 };
 
 const MentionElement = ({ attributes, children, element }) => {
+  console.log(attributes);
   const selected = useSelected();
   const focused = useFocused();
+  attributes.contentEditable = true;
   return (
-    <span
-      contentEditable={false}
-      style={{
-        padding: "3px 3px 2px",
-        margin: "0 1px",
-        borderRadius: "4px",
-        fontSize: "30px",
-        boxShadow: selected && focused ? '0 0 0 2px #B4D5FF' : 'none',
-      }}
-    >
-      {element.character}
-    </span>
+      <span
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+        style={{
+          padding: "3px 3px 2px",
+          margin: "0 1px",
+          borderRadius: "4px",
+          fontSize: "30px",
+        }}
+      >
+        {element.character}
+      </span>
   );
 };
+
+
 
 const initialValue = [
   {
@@ -236,39 +253,39 @@ const initialValue = [
 
 const ValueSets = [
   {
-    name: "Value Sets",
-    value: "Value Sets - runAt - to - from",
+    name: "ABEC",
+    value: "Vset",
   },
   {
-    name: "Value Sets 1",
-    value: "Value Sets 1 - runAt - to - from",
+    name: "ABEC",
+    value: "Vset",
   },
   {
-    name: "Value Sets 2",
-    value: "Value Sets 2 - runAt - to - from",
+    name: "ABEC",
+    value: "Vset",
   },
 ];
 
 const Functions = [
   {
-    name: "Age Between",
-    value: "Aayla Secura - runAt - to - from",
+    name: "ABES",
+    value: "aBet",
   },
   {
-    name: "Age Between 1",
-    value: "Age Between 1 - runAt - to - from",
+    name: "ABES",
+    value: "aBet",
   },
   {
-    name: "Age Between 2",
-    value: "Age Between 2 - runAt - to - from",
+    name: "ABES",
+    value: "aBet",
   },
   {
-    name: "CPvD2",
-    value: "Aayla Secura - runAt - to - from",
+    name: "ABES",
+    value: "aBet",
   },
   {
-    name: "Diagnosis",
-    value: "Aayla Secura - runAt - to - from",
+    name: "ABES",
+    value: "aBet",
   },
 ];
 
