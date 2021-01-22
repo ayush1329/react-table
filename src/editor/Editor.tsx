@@ -50,7 +50,7 @@ const MentionExample = () => {
           case "Enter":
             event.preventDefault();
             Transforms.select(editor, target);
-            insertMention(editor, chars[index].value);
+            insertMention(editor, chars[index] && chars[index].value ? chars[index].value : '');
             setTarget(null);
             break;
           case "Escape":
@@ -64,7 +64,7 @@ const MentionExample = () => {
   );
 
   useEffect(() => {
-    if (target && chars.length > 0) {
+    if (target) {
       const el: any = ref.current;
       const domRange = ReactEditor.toDOMRange(editor, target);
       const rect = domRange.getBoundingClientRect();
@@ -77,11 +77,9 @@ const MentionExample = () => {
 const onSave = () => {
   const str = JSON.stringify(value);
   let val = value.map(n => Node.string(n)).join('\n');
-  console.log(val);
   const deSerialize = JSON.parse('[{"children":[{"text":"This example shows how you might implement a simple @-mentions feature that lets users autocomplete mentioning a user by their username. Which, in this case means Star Wars characters. The mentions are rendered as void inline elements inside the document."}]},{"children":[{"text":"Try mentioning characters, like "},{"type":"mention","character":"R2-D2","children":[{"text":""}]},{"text":" or "},{"type":"mention","character":"Mace Windu","children":[{"text":""}]},{"text":"!"}]},{"children":[{"text":""}]},{"children":[{"text":""}]},{"type":"text","character":"Aayla Secura - runAt - to - from","children":[{"text":"Aayla Secura - runAt - to 20-21-202 from "}]},{"type":"text","character":"Value Sets - runAt - to - from","children":[{"text":"Value Sets - runAt - to - from"}]}]');
   console.log(deSerialize);
   setValue(deSerialize);
-  console.log(str);
 }
   return (
     <div className="row editor">
@@ -89,7 +87,6 @@ const onSave = () => {
         editor={editor}
         value={value}
         onChange={(value) => {
-          console.log(value);
           setValue(value);
           const { selection } = editor;
 
@@ -107,15 +104,15 @@ const onSave = () => {
             const afterRange = Editor.range(editor, start, after);
             const afterText = Editor.string(editor, afterRange);
             const afterMatch = afterText.match(/^(\s|$)/);
-
+            
             if (beforeMatch && afterMatch) {
               setTarget(beforeRange);
               const filterData: any =
-                beforeText && beforeText.match(/^#(\w+)$/)
+                beforeText && beforeText && beforeText.match(/^#(\w+)$/)
                   ? ValueSets
                   : Functions;
               const suggestionList = filterData.filter((c) =>
-                c.name.toLowerCase().startsWith(beforeMatch[1].toLowerCase())
+                c.name.toLowerCase().startsWith(beforeMatch[1] ? beforeMatch[1].toLowerCase() : '')
               );
               setChars(suggestionList);
               setSearch(beforeMatch[1]);
@@ -131,7 +128,7 @@ const onSave = () => {
           onKeyDown={onKeyDown}
           placeholder="Enter some text..."
         />
-        {target && chars.length > 0 && (
+        {target && (
           <Portal>
             <div
               ref={ref}
@@ -182,16 +179,13 @@ const withMentions = (editor) => {
 };
 
 const insertMention = (editor, character: any) => {
-  console.log(character);
-  const mention = { type: "text", character, children: [{ text: character }],  };
-  const parent = {type: "custom" , children : [mention]}
-  Transforms.insertNodes(editor, parent);
+  const mention = { type: "custom", character, children: [{ text: character }]};
+  Transforms.insertNodes(editor, mention);
   Transforms.move(editor);
 };
 
 const Element = (props) => {
   const { attributes, children, element } = props;
-  console.log(props);
   switch (element.type) {
     case "custom":
       return <span style={{color: "red"}} {...attributes}>{children}</span>;
@@ -201,7 +195,6 @@ const Element = (props) => {
 };
 
 const MentionElement = ({ attributes, children, element }) => {
-  console.log(attributes);
   const selected = useSelected();
   const focused = useFocused();
   attributes.contentEditable = true;
