@@ -1,9 +1,14 @@
-.editor {
-    border: 1px solid #ccc;
+.rule-editor {
     margin: 100px !important;
-    text-align: left;
-    div {
-        padding: 15px !important;
-        font-size: 24px;
+    .editor {
+        border: 1px solid #ccc;
+        text-align: left;
+        div {
+            padding: 15px !important;
+            font-size: 20px;
+            height: 400px;
+            width: 100%;
+        }
     }
 }
+

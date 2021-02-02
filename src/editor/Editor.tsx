@@ -15,9 +15,10 @@ import {
   useSelected,
   useFocused,
 } from "slate-react";
-
 import { Portal } from "./Component";
 import "./editor.scss";
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Switch from '@material-ui/core/Switch';
 
 const MentionExample = () => {
   const ref = useRef<any>();
@@ -26,11 +27,18 @@ const MentionExample = () => {
   const [index, setIndex] = useState(0);
   const [search, setSearch] = useState("");
   const [chars, setChars] = useState<any>([]);
+  const [deserializeValue, setdeserializeValue] = useState("");
+  const [state, setState] = React.useState(false);
   const renderElement = useCallback((props) => <Element {...props} />, []);
   const editor = useMemo(
     () => withMentions(withReact(withHistory(createEditor()))),
     []
   );
+
+  const handleChange = (event) => {
+    setState(!state);
+  };
+
 
   const onKeyDown = useCallback(
     (event) => {
@@ -68,98 +76,122 @@ const MentionExample = () => {
       const el: any = ref.current;
       const domRange = ReactEditor.toDOMRange(editor, target);
       const rect = domRange.getBoundingClientRect();
-      el.style.top = `${rect.top + window.pageYOffset + 24}px`;
-      el.style.left = `${rect.left + window.pageXOffset}px`;
+      el.style.top = `${rect.top + window.pageYOffset + 30}px`;
+      el.style.left = `${rect.left + window.pageXOffset + 15}px`;
     }
   }, [chars.length, editor, index, search, target]);
 
 
-const onSave = () => {
-  const str = JSON.stringify(value);
-  let val = value.map(n => Node.string(n)).join('\n');
-  const deSerialize = JSON.parse('[{"children":[{"text":"This example shows how you might implement a simple @-mentions feature that lets users autocomplete mentioning a user by their username. Which, in this case means Star Wars characters. The mentions are rendered as void inline elements inside the document."}]},{"children":[{"text":"Try mentioning characters, like "},{"type":"mention","character":"R2-D2","children":[{"text":""}]},{"text":" or "},{"type":"mention","character":"Mace Windu","children":[{"text":""}]},{"text":"!"}]},{"children":[{"text":""}]},{"children":[{"text":""}]},{"type":"text","character":"Aayla Secura - runAt - to - from","children":[{"text":"Aayla Secura - runAt - to 20-21-202 from "}]},{"type":"text","character":"Value Sets - runAt - to - from","children":[{"text":"Value Sets - runAt - to - from"}]}]');
-  console.log(deSerialize);
-  setValue(deSerialize);
-}
+  const onSave = () => {
+    const str = JSON.stringify(value);
+    let val = value.map(n => Node.string(n)).join('\n');
+    const deSerialize = JSON.parse(str);
+    console.log(deSerialize);
+    setdeserializeValue(val);
+  }
   return (
-    <div className="row editor">
-      <Slate
-        editor={editor}
-        value={value}
-        onChange={(value) => {
-          setValue(value);
-          const { selection } = editor;
-
-          if (selection && Range.isCollapsed(selection)) {
-            const [start] = Range.edges(selection);
-            const wordBefore = Editor.before(editor, start, { unit: "word" });
-            const before = wordBefore && Editor.before(editor, wordBefore);
-            const beforeRange = before && Editor.range(editor, before, start);
-            const beforeText =
-              beforeRange && Editor.string(editor, beforeRange);
-            const beforeMatch =
-              (beforeText && beforeText.match(/^@(\w+)$/)) ||
-              (beforeText && beforeText.match(/^#(\w+)$/));
-            const after = Editor.after(editor, start);
-            const afterRange = Editor.range(editor, start, after);
-            const afterText = Editor.string(editor, afterRange);
-            const afterMatch = afterText.match(/^(\s|$)/);
-            
-            if (beforeMatch && afterMatch) {
-              setTarget(beforeRange);
-              const filterData: any =
-                beforeText && beforeText && beforeText.match(/^#(\w+)$/)
-                  ? ValueSets
-                  : Functions;
-              const suggestionList = filterData.filter((c) =>
-                c.name.toLowerCase().startsWith(beforeMatch[1] ? beforeMatch[1].toLowerCase() : '')
-              );
-              setChars(suggestionList);
-              setSearch(beforeMatch[1]);
-              setIndex(0);
-              return;
+    <div className="row rule-editor">
+      <div className="row m-0 w-100">
+        <h4 className="col p-0 text-left"> Rule Editor</h4>
+        <div className="col-10 p-0 text-right">
+          <FormControlLabel
+            control={
+              <Switch
+                checked={state}
+                onChange={handleChange}
+                name="checkedB"
+                color="primary"
+              />
             }
-          }
-          setTarget(null);
-        }}
-      >
-        <Editable
-          renderElement={renderElement}
-          onKeyDown={onKeyDown}
-          placeholder="Enter some text..."
-        />
-        {target && (
-          <Portal>
-            <div
-              ref={ref}
-              style={{
-                top: "-9999px",
-                left: "-9999px",
-                position: "absolute",
-                zIndex: 1,
-                padding: "10px 0px",
-                background: "white",
-                borderRadius: "4px",
-                boxShadow: "0 1px 5px rgba(0,0,0,.2)",
-              }}
-            >
-              {chars.map((char: any, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: "1px 3px",
-                    borderRadius: "3px",
-                    background: i === index ? "#B4D5FF" : "transparent",
-                  }}
-                >
-                  {char.name}
-                </div>
-              ))}
-            </div>
-          </Portal>
-        )}
-      </Slate>
-      <button type="submit" onClick={onSave}>Submit</button>
+            label="Dark Mode"
+          />
+        </div>
+      </div>
+      <div className="row editor m-0 w-100" style={{ backgroundColor: state ? "#38383d" : "#fff", color: state ? "#fff" : "#38383d" }}>
+        <Slate
+          editor={editor}
+          value={value}
+          onChange={(value) => {
+            setValue(value);
+            const { selection } = editor;
+            if (selection && Range.isCollapsed(selection)) {
+              const [start] = Range.edges(selection);
+              const wordBefore = Editor.before(editor, start, { unit: "word" });
+              const before = wordBefore && Editor.before(editor, wordBefore);
+              const beforeRange = before && Editor.range(editor, before, start);
+              const beforeText =
+                beforeRange && Editor.string(editor, beforeRange);
+              const beforeMatch =
+                (beforeText && beforeText.match(/@/)) ||
+                (beforeText && beforeText.match(/#/));
+              const after = Editor.after(editor, start);
+              const afterRange = Editor.range(editor, start, after);
+              const afterText = Editor.string(editor, afterRange);
+              const afterMatch = afterText.match(/^(\s|$)/);
+
+              if (beforeMatch && afterMatch) {
+                setTarget(beforeRange);
+                const speacialChar = beforeText && beforeText.match(/#/) ? "#" : "@";
+                const filterData: any = beforeText && beforeText.match(/#/) ? ValueSets : Functions;
+                const searchText: any = beforeMatch && beforeMatch['input'] && beforeMatch['input'].split(speacialChar)[1];
+                const suggestionList = filterData.filter((c) =>
+                  c.name.toLowerCase().startsWith(searchText)
+                );
+                setChars(suggestionList);
+                setSearch(searchText);
+                setIndex(0);
+                return;
+              }
+            }
+            setTarget(null);
+          }}
+        >
+          <Editable
+            renderElement={renderElement}
+            onKeyDown={onKeyDown}
+            placeholder="Enter rule definition ..."
+          />
+          {target && (
+            <Portal>
+              <div
+                ref={ref}
+                style={{
+                  top: "-9999px",
+                  left: "-9999px",
+                  position: "absolute",
+                  zIndex: 1,
+                  padding: "10px 0px",
+                  background: "white",
+                  width: 300,
+                  height: 200,
+                  borderRadius: "2px",
+                  boxShadow: "0 1px 5px rgba(0,0,0,.2)",
+                }}
+              >
+                {chars.map((char: any, i) => (
+                  <div
+                    key={i}
+                    // onClick={(e) => {e.preventDefault();console.log('Sleect')} }
+                    style={{
+                      padding: "1px 3px",
+                      background: i === index ? "#ccc" : "transparent",
+                    }}
+                  >
+                    {char.name}
+                  </div>
+                ))}
+              </div>
+            </Portal>
+          )}
+        </Slate>
+      </div>
+      <button type="submit" className="btn btn-primary mt-3" onClick={onSave}>Submit</button>
+      <div className="row m-0 w-100">
+        <h6>
+          {deserializeValue}
+        </h6>
+      </div>
+
     </div>
   );
 };
@@ -179,40 +211,50 @@ const withMentions = (editor) => {
 };
 
 const insertMention = (editor, character: any) => {
-  const mention = { type: "custom", character, children: [{ text: character }]};
+  console.log(character);
+  const mention = { type: "custom", character, children: [{ text: character }] };
   Transforms.insertNodes(editor, mention);
   Transforms.move(editor);
+
+  // setTimeout(() => {
+  //   insertPlainText(editor, character);
+  // }, 100);
 };
+
+const insertPlainText = (editor, character: any) => {
+  const mention = { type: "text", character, children: [{ text: "" }] };
+  Transforms.insertNodes(editor, mention);
+  Transforms.move(editor);
+}
 
 const Element = (props) => {
   const { attributes, children, element } = props;
   switch (element.type) {
     case "custom":
-      return <span style={{color: "red"}} {...attributes}>{children}</span>;
+      return <span {...attributes}>{children}</span>
     default:
       return <span {...attributes}>{children}</span>;
   }
 };
 
-const MentionElement = ({ attributes, children, element }) => {
-  const selected = useSelected();
-  const focused = useFocused();
-  attributes.contentEditable = true;
-  return (
-      <span
-        contentEditable={true}
-        suppressContentEditableWarning={true}
-        style={{
-          padding: "3px 3px 2px",
-          margin: "0 1px",
-          borderRadius: "4px",
-          fontSize: "30px",
-        }}
-      >
-        {element.character}
-      </span>
-  );
-};
+// const MentionElement = ({ attributes, children, element }) => {
+//   const selected = useSelected();
+//   const focused = useFocused();
+//   return (
+//       <span
+//         contentEditable={true}
+//         suppressContentEditableWarning={true}
+//         style={{
+//           padding: "3px 3px 2px",
+//           margin: "0 1px",
+//           borderRadius: "4px",
+//           fontSize: "30px",
+//         }}
+//       >
+//         {element.character}
+//       </span>
+//   );
+// };
 
 
 
@@ -221,65 +263,18 @@ const initialValue = [
     children: [
       {
         text:
-          "This example shows how you might implement a simple @-mentions feature that lets users autocomplete mentioning a user by their username. Which, in this case means Star Wars characters. The mentions are rendered as void inline elements inside the document.",
+          "",
       },
     ],
-  },
-  {
-    children: [
-      { text: "Try mentioning characters, like " },
-      {
-        type: "mention",
-        character: "R2-D2",
-        children: [{ text: "" }],
-      },
-      { text: " or " },
-      {
-        type: "mention",
-        character: "Mace Windu",
-        children: [{ text: "" }],
-      },
-      { text: "!" },
-    ],
-  },
+  }
 ];
 
 const ValueSets = [
-  {
-    name: "ABEC",
-    value: "Vset",
-  },
-  {
-    name: "ABEC",
-    value: "Vset",
-  },
-  {
-    name: "ABEC",
-    value: "Vset",
-  },
+ 
 ];
 
 const Functions = [
-  {
-    name: "ABES",
-    value: "aBet",
-  },
-  {
-    name: "ABES",
-    value: "aBet",
-  },
-  {
-    name: "ABES",
-    value: "aBet",
-  },
-  {
-    name: "ABES",
-    value: "aBet",
-  },
-  {
-    name: "ABES",
-    value: "aBet",
-  },
+  
 ];
 
 export default MentionExample;
