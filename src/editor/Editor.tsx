@@ -56,6 +56,7 @@ const MentionExample = () => {
             break;
           case "Tab":
           case "Enter":
+            Editor.insertBreak(editor);
             event.preventDefault();
             Transforms.select(editor, target);
             insertMention(editor, chars[index] && chars[index].value ? chars[index].value : '');
@@ -89,6 +90,7 @@ const MentionExample = () => {
     console.log(deSerialize);
     setdeserializeValue(val);
   }
+
   return (
     <div className="row rule-editor">
       <div className="row m-0 w-100">
@@ -113,32 +115,34 @@ const MentionExample = () => {
           value={value}
           onChange={(value) => {
             setValue(value);
+            console.log(editor);
             const { selection } = editor;
             if (selection && Range.isCollapsed(selection)) {
               const [start] = Range.edges(selection);
-              const wordBefore = Editor.before(editor, start, { unit: "word" });
+              const wordBefore = Editor.before(editor, start, {unit: "word"});
               const before = wordBefore && Editor.before(editor, wordBefore);
               const beforeRange = before && Editor.range(editor, before, start);
               const beforeText =
                 beforeRange && Editor.string(editor, beforeRange);
-              const beforeMatch =
-                (beforeText && beforeText.match(/@/)) ||
-                (beforeText && beforeText.match(/#/));
+                const beforeMatch =
+                (beforeText && beforeText.match(/^@(\w+)$/)) ||
+                (beforeText && beforeText.match(/^#(\w+)$/));
               const after = Editor.after(editor, start);
               const afterRange = Editor.range(editor, start, after);
               const afterText = Editor.string(editor, afterRange);
               const afterMatch = afterText.match(/^(\s|$)/);
-
+              console.log(beforeMatch)
               if (beforeMatch && afterMatch) {
                 setTarget(beforeRange);
-                const speacialChar = beforeText && beforeText.match(/#/) ? "#" : "@";
-                const filterData: any = beforeText && beforeText.match(/#/) ? ValueSets : Functions;
-                const searchText: any = beforeMatch && beforeMatch['input'] && beforeMatch['input'].split(speacialChar)[1];
+                const filterData: any =
+                  beforeText && beforeText && beforeText.match(/^#(\w+)$/)
+                    ? ValueSets
+                    : Functions;
                 const suggestionList = filterData.filter((c) =>
-                  c.name.toLowerCase().startsWith(searchText)
+                  c.name.toLowerCase().startsWith(beforeMatch[1] ? beforeMatch[1].toLowerCase() : '')
                 );
                 setChars(suggestionList);
-                setSearch(searchText);
+                setSearch(beforeMatch[1]);
                 setIndex(0);
                 return;
               }
@@ -171,7 +175,6 @@ const MentionExample = () => {
                 {chars.map((char: any, i) => (
                   <div
                     key={i}
-                    // onClick={(e) => {e.preventDefault();console.log('Sleect')} }
                     style={{
                       padding: "1px 3px",
                       background: i === index ? "#ccc" : "transparent",
@@ -211,21 +214,10 @@ const withMentions = (editor) => {
 };
 
 const insertMention = (editor, character: any) => {
-  console.log(character);
   const mention = { type: "custom", character, children: [{ text: character }] };
   Transforms.insertNodes(editor, mention);
   Transforms.move(editor);
-
-  // setTimeout(() => {
-  //   insertPlainText(editor, character);
-  // }, 100);
 };
-
-const insertPlainText = (editor, character: any) => {
-  const mention = { type: "text", character, children: [{ text: "" }] };
-  Transforms.insertNodes(editor, mention);
-  Transforms.move(editor);
-}
 
 const Element = (props) => {
   const { attributes, children, element } = props;
@@ -270,11 +262,41 @@ const initialValue = [
 ];
 
 const ValueSets = [
- 
+  {
+    name: "Serum Creatinine",
+    value: '"HEDIS.Serum_Creatinine"',
+  },
+  {
+    name: "Nonacute_Inpatient",
+    value: '"HEDIS.Nonacute_Inpatient"',
+  },
+  {
+    name: "Acute_Inpatient",
+    value: '"HEDIS.Acute_Inpatient"',
+  },
 ];
 
 const Functions = [
-  
+  {
+    name: "ageBetween",
+    value: "age between condition1 and condition2 on runDate",
+  },
+  {
+    name: "has",
+    value: 'has condition1 from runDate-12 to runDate',
+  },
+  {
+    name: "hasWith",
+    value: 'has condition1 with condition2 from runDate-12 to runDate',
+  },
+  {
+    name: "hasChronicCondition",
+    value: 'has chronic condition condition1 between runDate-24 months and runDate',
+  },
+  {
+    name: "enrolled",
+    value: 'continousEnrollment coverageTypes from runDate-12 to runDate with gaps and maxAllowedGap days',
+  }
 ];
 
 export default MentionExample;
